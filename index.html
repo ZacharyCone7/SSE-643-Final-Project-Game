@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Campfire Siege</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <canvas id="bg"></canvas>
+    
+    <div id="ui-container">
+        <div id="stats">
+            <span id="health-display">Health: 100</span> | 
+            <span id="score-display">Zombies Defeated: 0</span>
+        </div>
+    </div>
+
+    <div id="crosshair">+</div>
+    
+    <div id="menus">
+        <div id="instructions">
+            <h1>CAMPFIRE SIEGE</h1>
+            <p>Click to Start</p>
+            <p>WASD to Move | Mouse to Look | Left Click to Shoot</p>
+            <p>Don't let them reach the fire.</p>
+        </div>
+        <div id="game-over" style="display: none;">
+            <h1>YOU DIED</h1>
+            <p id="final-score">Zombies Defeated: 0</p>
+            <p>Refresh to try again.</p>
+        </div>
+    </div>
+
+    <script type="importmap">
+      {
+        "imports": {
+          "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+          "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+        }
+      }
+    </script>
+    <script type="module" src="script.js"></script>
+</body>
+</html>
