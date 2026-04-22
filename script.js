@@ -517,7 +517,7 @@ function spawnZombie() {
             action = mixer.clipAction(animations[13]);
         } else {
             // ZOMBIE 1: Play the crawling animation (Index 0)
-            action = mixer.clipAction(animations[0]);
+            action = mixer.clipAction(animations[13]);
         }
         
         action.play();
