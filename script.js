@@ -462,7 +462,7 @@ let spawnInterval = 2;
 let zombiesSpawnedCount = 0; // Tracks total spawns to determine when zombie2 appears
 
 function spawnZombie() {
-    if (!zombie1Template) return;
+    if (!zombie1Template || !zombie2Template) return;
 
     zombiesSpawnedCount++;
 
@@ -478,15 +478,26 @@ function spawnZombie() {
     clone.userData.health = isSpecialSpawn ? 5 : 1;
 
     // Add an invisible Hitbox
-    const hitboxGeo = new THREE.BoxGeometry(1.5, 0.8, 2.5);
+    let hitboxGeo;
+    if (isSpecialSpawn) {
+        // ZOMBIE 2: Standing upright, so use a tall cylinder
+        hitboxGeo = new THREE.CylinderGeometry(0.6, 0.6, 2.5, 8); 
+    } else {
+        // ZOMBIE 1: Crawling, so use a flat, low box
+        hitboxGeo = new THREE.BoxGeometry(1.5, 0.8, 2.5);
+    }
     const hitboxMat = new THREE.MeshBasicMaterial({ 
         transparent: true, 
         opacity: 0.0,
         depthWrite: false
     }); 
     const hitbox = new THREE.Mesh(hitboxGeo, hitboxMat);
-    hitbox.position.y = 0.4; 
-    hitbox.position.z = 1.0;
+    if (isSpecialSpawn) {
+        hitbox.position.y = 1.25; // Shift cylinder up to cover the torso
+    } else {
+        hitbox.position.y = 0.4;  // Keep the crawler box low
+        hitbox.position.z = 1.0;  // Shift it forward
+    }
     hitbox.userData.parentZombie = clone;
     clone.add(hitbox);
     targetHitboxes.push(hitbox);
@@ -497,9 +508,18 @@ function spawnZombie() {
     clone.position.set(Math.cos(angle) * radius, 0, Math.sin(angle) * radius);
     
     // Setup animation mixer for this specific clone
-    if (zombie1Animations.length > 0) {
+    if (animations.length > 0) {
         const mixer = new THREE.AnimationMixer(clone);
-        const action = mixer.clipAction(zombie1Animations[0]); // Assuming 0 is walk cycle
+        
+        let action;
+        if (isSpecialSpawn) {
+            // ZOMBIE 2: Play the running animation (Index 11)
+            action = mixer.clipAction(animations[13]);
+        } else {
+            // ZOMBIE 1: Play the crawling animation (Index 0)
+            action = mixer.clipAction(animations[0]);
+        }
+        
         action.play();
         mixers.push({ mixer: mixer, model: clone });
     }
