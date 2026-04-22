@@ -10,7 +10,7 @@ scene.background = new THREE.Color(0x020202);
 scene.fog = new THREE.FogExp2(0x020202, 0.04); // Adds spooky darkness
 
 const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-camera.position.set(0, 1.8, 8); // Start at center (campfire)
+camera.position.set(0, 1.8, -2); // Start at center (campfire)
 camera.rotation.order = 'YXZ';
 
 const renderer = new THREE.WebGLRenderer({ antialias: true });
@@ -26,7 +26,6 @@ let health = 100;
 let score = 0;
 const activeZombies = [];
 const mixers = [];
-//const fireFlames = []; // Array to hold our animated fire particles
 
 let zombie1Template = null;
 let zombie2Template = null; // Add this!
@@ -87,29 +86,6 @@ function createStarfield(numStars) {
 const stars = createStarfield(2000);
 scene.add(stars);
 
-// // --- FIRE SHADERS ---
-// const firePositions = new Float32Array(600);
-// const fireRandoms = new Float32Array(200);
-// for (let i = 0; i < 200; i++) {
-//     firePositions.set([(Math.random() - 0.5) * 0.5, Math.random() * 1.5, (Math.random() - 0.5) * 0.5], i * 3);
-//     fireRandoms[i] = Math.random();
-// }
-// const fireGeometry = new THREE.BufferGeometry();
-// fireGeometry.setAttribute('position', new THREE.BufferAttribute(firePositions, 3));
-// fireGeometry.setAttribute('aRandom', new THREE.BufferAttribute(fireRandoms, 1));
-
-// const fireMaterial = new THREE.ShaderMaterial({
-//     uniforms: { uTime: { value: 0.0 } },
-//     vertexShader: `varying float vOpacity; attribute float aRandom; uniform float uTime; void main() { vec3 pos = position; float progress = mod(pos.y + uTime * (0.4 + aRandom * 0.2), 1.0); pos.y = progress; float taper = 1.0 - progress; pos.x *= taper; pos.z *= taper; vec4 mvPosition = modelViewMatrix * vec4(pos, 1.0); gl_PointSize = (25.0 + aRandom * 15.0) * (1.0 / -mvPosition.z); gl_Position = projectionMatrix * mvPosition; vOpacity = taper; }`,
-//     fragmentShader: `varying float vOpacity; void main() { float d = distance(gl_PointCoord, vec2(0.5)); if (d > 0.5) discard; vec3 color = mix(vec3(1.0, 0.1, 0.0), vec3(1.0, 0.8, 0.3), vOpacity); gl_FragColor = vec4(color, vOpacity * 0.9); }`,
-//     transparent: true, blending: THREE.AdditiveBlending, depthWrite: false
-// });
-// const fire = new THREE.Points(fireGeometry, fireMaterial);
-// fire.position.y = 0.1;
-// scene.add(fire);
-
-// Make sure fireShaderMaterial is declared outside the function 
-// so you can update uTime in your animation loop!
 let fireShaderMaterial; 
 let sparkMaterial;
 let fireIntensity = 0.5;
@@ -273,171 +249,6 @@ function createCampfire() {
     scene.add(campfireGroup);
 }
 
-// // Keep this global so we can animate it
-// let fireShaderMaterial;
-
-// function createCampfire() {
-//     const campfireGroup = new THREE.Group();
-
-//     // 1. The Logs (No shadows casting on themselves)
-//     const logMaterial = new THREE.MeshStandardMaterial({ color: 0x3d1c04, roughness: 1.0 });
-//     const logGeometry = new THREE.CylinderGeometry(0.15, 0.15, 1.5, 8);
-//     for (let i = 0; i < 6; i++) {
-//         const log = new THREE.Mesh(logGeometry, logMaterial);
-//         log.rotation.z = Math.PI / 2;
-//         log.rotation.y = (Math.PI / 3) * i;
-//         log.position.y = 0.1;
-//         log.receiveShadow = true;
-//         campfireGroup.add(log);
-//     }
-
-//     // 2. Glowing Embers Base
-//     const emberGeo = new THREE.SphereGeometry(0.5, 8, 8);
-//     const emberMat = new THREE.MeshBasicMaterial({ color: 0xff3300, fog: false });
-//     const embers = new THREE.Mesh(emberGeo, emberMat);
-//     embers.position.y = 0.1;
-//     embers.scale.y = 0.3; 
-//     campfireGroup.add(embers);
-
-//     // 3. The Particle Fire Shader
-//     const particleCount = 200;
-//     const firePositions = new Float32Array(particleCount * 3);
-//     const fireRandoms = new Float32Array(particleCount);
-
-//     for (let i = 0; i < particleCount; i++) {
-//         // Start them scattered in a small radius
-//         firePositions[i * 3] = (Math.random() - 0.5) * 0.6;     // x
-//         firePositions[i * 3 + 1] = Math.random() * 1.5;         // y
-//         firePositions[i * 3 + 2] = (Math.random() - 0.5) * 0.6; // z
-//         fireRandoms[i] = Math.random(); // Random offset per particle
-//     }
-
-//     const fireGeo = new THREE.BufferGeometry();
-//     fireGeo.setAttribute('position', new THREE.BufferAttribute(firePositions, 3));
-//     fireGeo.setAttribute('aRandom', new THREE.BufferAttribute(fireRandoms, 1));
-
-//     fireShaderMaterial = new THREE.ShaderMaterial({
-//         uniforms: { uTime: { value: 0.0 } },
-//         vertexShader: `
-//             uniform float uTime;
-//             attribute float aRandom;
-//             varying float vOpacity;
-
-//             void main() {
-//                 vec3 pos = position;
-                
-//                 // Animate upwards and loop back to 0
-//                 float life = mod(uTime * (0.5 + aRandom * 0.8) + aRandom, 1.0);
-//                 pos.y = life * 1.8; 
-                
-//                 // Taper inwards as the flame goes up
-//                 pos.x *= (1.0 - life);
-//                 pos.z *= (1.0 - life);
-
-//                 vec4 mvPosition = modelViewMatrix * vec4(pos, 1.0);
-                
-//                 // Make particles smaller the further away they are
-//                 gl_PointSize = (40.0 * aRandom + 15.0) * (1.0 / -mvPosition.z);
-//                 gl_Position = projectionMatrix * mvPosition;
-                
-//                 // Fade out at the top
-//                 vOpacity = 1.0 - life;
-//             }
-//         `,
-//         fragmentShader: `
-//             varying float vOpacity;
-            
-//             void main() {
-//                 // Round the particles (discard corners of the square)
-//                 float d = distance(gl_PointCoord, vec2(0.5));
-//                 if (d > 0.5) discard;
-                
-//                 // Color gradient: Yellow at the bottom/hot parts, Red/Orange at the top
-//                 vec3 color = mix(vec3(1.0, 0.1, 0.0), vec3(1.0, 0.8, 0.1), vOpacity);
-                
-//                 gl_FragColor = vec4(color, vOpacity);
-//             }
-//         `,
-//         transparent: true,
-//         blending: THREE.AdditiveBlending,
-//         depthWrite: false, // NO MORE BLACK BLOBS
-//         fog: false         // IGNORE THE SCENE FOG
-//     });
-
-//     const fireParticles = new THREE.Points(fireGeo, fireShaderMaterial);
-//     fireParticles.position.y = 0.2;
-//     campfireGroup.add(fireParticles);
-
-//     scene.add(campfireGroup);
-// }
-
-// function createCampfire() {
-//     const campfireGroup = new THREE.Group();
-
-//     // 1. Logs (More logs, slightly thicker for a bigger base)
-//     const logMaterial = new THREE.MeshStandardMaterial({ color: 0x3d1c04, roughness: 1.0 });
-//     const logGeometry = new THREE.CylinderGeometry(0.15, 0.15, 1.5, 8);
-    
-//     for (let i = 0; i < 6; i++) {
-//         const log = new THREE.Mesh(logGeometry, logMaterial);
-//         log.rotation.z = Math.PI / 2;
-//         log.rotation.y = (Math.PI / 3) * i;
-//         log.position.y = 0.1;
-//         log.castShadow = true;
-//         log.receiveShadow = true;
-//         campfireGroup.add(log);
-//     }
-
-//     // 2. Glowing Embers Base
-//     const emberGeo = new THREE.SphereGeometry(0.6, 8, 8);
-//     const emberMat = new THREE.MeshBasicMaterial({ color: 0xff3300, fog: false });
-//     const embers = new THREE.Mesh(emberGeo, emberMat);
-//     embers.position.y = 0.1;
-//     embers.scale.y = 0.3; // Flatten it into a bed of coals
-//     campfireGroup.add(embers);
-
-//     // 3. Dynamic Flames using Additive Blending
-//     const flameGeo = new THREE.ConeGeometry(0.4, 1.5, 5); // Taller cones
-    
-//     for (let i = 0; i < 15; i++) {
-//         const flameMat = new THREE.MeshBasicMaterial({ 
-//             color: Math.random() > 0.5 ? 0xffaa00 : 0xff4400, // Mix of yellow and orange
-//             transparent: true,
-//             opacity: 0.6,
-//             blending: THREE.AdditiveBlending, // The magic ingredient for glowing fire
-//             depthWrite: false, // Prevents weird overlapping visual glitches
-//             fog: false // Cuts through the darkness
-//         });
-
-//         const flame = new THREE.Mesh(flameGeo, flameMat);
-        
-//         // Randomize starting positions and sizes
-//         flame.position.set(
-//             (Math.random() - 0.5) * 0.8,
-//             0.2 + Math.random(),
-//             (Math.random() - 0.5) * 0.8
-//         );
-//         flame.rotation.set(
-//             (Math.random() - 0.5) * 0.3,
-//             Math.random() * Math.PI,
-//             (Math.random() - 0.5) * 0.3
-//         );
-//         flame.scale.setScalar(0.5 + Math.random() * 0.8);
-
-//         // Store custom data on the mesh so we can animate it easily
-//         flame.userData = {
-//             speed: 1.5 + Math.random() * 2,
-//             baseScale: flame.scale.x,
-//             offset: Math.random() * 100 // For randomized flickering
-//         };
-
-//         fireFlames.push(flame);
-//         campfireGroup.add(flame);
-//     }
-
-//     scene.add(campfireGroup);
-// }
-
 function createForest(density = 2, areaSize = 100) {
     const spacing = 10 / density; // Higher density = lower spacing
     const safeZone = 10; // No trees within 10 units of the center
@@ -506,6 +317,7 @@ const loader = new GLTFLoader();
 // IMPORTANT: Update this path to your actual model
 loader.load('src/assets/zombie1.gltf', (gltf) => {
     zombie1Template = gltf.scene;
+    zombie1Template.rotation.x = -Math.PI / 2;
     zombie1Animations = gltf.animations;
     
     // Optional: scale down if your model is huge
@@ -525,7 +337,7 @@ loader.load('src/assets/zombie2.gltf', (gltf) => {
     zombie2Animations = gltf.animations;
     
     // Optional: scale down if your model is huge
-    zombie2Template.scale.set(1, 1, 1); 
+    zombie2Template.scale.set(2, 2, 2); 
     
     zombie2Template.traverse((child) => {
         if (child.isMesh) {
@@ -588,6 +400,15 @@ document.addEventListener('mousemove', (event) => {
     }
 });
 
+document.addEventListener('keydown', (e) => {
+    keys[e.key.toLowerCase()] = true;
+
+    // Check if the player is dead and presses Space
+    if (e.code === 'Space' && health <= 0) {
+        window.location.reload();
+    }
+});
+
 document.addEventListener('keydown', (e) => keys[e.key.toLowerCase()] = true);
 document.addEventListener('keyup', (e) => keys[e.key.toLowerCase()] = false);
 
@@ -615,8 +436,20 @@ document.addEventListener('mousedown', (e) => {
             const hitBox = intersects[0].object;
             const zombieModel = hitBox.userData.parentZombie;
             
+            setTimeout(() => {
+                // Subtract health
+                zombieModel.userData.health -= 1;
+
+                if (zombieModel.userData.health <= 0) {
+                    killZombie(zombieModel);
+                } else {
+                    // Optional: Visual feedback for a non-lethal hit
+                    flashZombie(zombieModel);
+                }
+            }, 100);
+
             // Optional: Delay the kill slightly to match the "impact" of the swing
-            setTimeout(() => killZombie(zombieModel), 100);
+            //setTimeout(() => killZombie(zombieModel), 100);
         }
     }
 });
@@ -625,22 +458,30 @@ document.addEventListener('mousedown', (e) => {
 // 6. ENEMY MANAGER
 // --------------------------------------------------------
 let lastSpawnTime = 0;
-let spawnInterval = 3;
+let spawnInterval = 2;
+let zombiesSpawnedCount = 0; // Tracks total spawns to determine when zombie2 appears
 
 function spawnZombie() {
     if (!zombie1Template) return;
 
+    zombiesSpawnedCount++;
+
+    // Determine which zombie to use: zombie2 every 10th spawn
+    const isSpecialSpawn = zombiesSpawnedCount % 10 === 0;
+    const template = (isSpecialSpawn && zombie2Template) ? zombie2Template : zombie1Template;
+    const animations = (isSpecialSpawn && zombie2Template) ? zombie2Animations : zombie1Animations;
+
     // Use SkeletonUtils to clone the skinned mesh properly
-    const clone = SkeletonUtils.clone(zombie1Template);
+    const clone = SkeletonUtils.clone(template);
     clone.userData.isZombie = true;
+
+    clone.userData.health = isSpecialSpawn ? 5 : 1;
 
     // Add an invisible Hitbox
     const hitboxGeo = new THREE.BoxGeometry(1.5, 0.8, 2.5);
     const hitboxMat = new THREE.MeshBasicMaterial({ 
-        // color: 0xff0000, //debug
-        // wireframe: true, //debug
         transparent: true, 
-        opacity: 0.0, // debug
+        opacity: 0.0,
         depthWrite: false
     }); 
     const hitbox = new THREE.Mesh(hitboxGeo, hitboxMat);
@@ -838,7 +679,7 @@ function animate() {
     mixers.forEach(m => m.mixer.update(deltaTime));
     
     // Flicker firelight
-    fireLight.intensity = 10.0 + Math.random() * 5.0;
+    fireLight.intensity = 50.0 + Math.random() * 5.0;
 
     if (woodenbatTemplate) {
         if (isSwinging) {
@@ -854,7 +695,7 @@ function animate() {
             // This is what makes it feel like it's coming "across" the body
             // We add to the base rotation to sweep from right to left
             const arcY = Math.sin(swingProgress) * 1.2; 
-            woodenbatTemplate.rotation.y = batBaseRot.y - arcY;>
+            woodenbatTemplate.rotation.y = batBaseRot.y - arcY;
 
             if (swingTimer >= Math.PI) {
                 isSwinging = false;
