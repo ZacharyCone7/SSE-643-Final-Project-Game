@@ -7,11 +7,11 @@ import * as SkeletonUtils from 'three/addons/utils/SkeletonUtils.js';
 // --------------------------------------------------------
 const scene = new THREE.Scene();
 scene.background = new THREE.Color(0x020202);
-scene.fog = new THREE.FogExp2(0x020202, 0.04); // Adds spooky darkness
+scene.fog = new THREE.FogExp2(0x020202, 0.04); // Dense fog for atmosphere
 
 const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-camera.position.set(0, 1.8, -2); // Start at center (campfire)
-camera.rotation.order = 'YXZ';
+camera.position.set(0, 1.8, -2); // Starts near the campfire
+camera.rotation.order = 'YXZ'; // Prevents "gimbal lock" for FPS controls
 
 const renderer = new THREE.WebGLRenderer({ antialias: true });
 renderer.setSize(window.innerWidth, window.innerHeight);
@@ -20,23 +20,21 @@ document.body.appendChild(renderer.domElement);
 
 const clock = new THREE.Clock();
 
-// Game State
+// Game State Management
 let isPlaying = false;
 let health = 100;
 let score = 0;
 const activeZombies = [];
 const mixers = [];
-
-let zombie1Template = null;
-let zombie2Template = null; // Add this!
-let woodenbatTemplate = null;
-let zombie1Animations = [];
-let zombie2Animations = []; // Add this!
-let woodenbatAnimations = []; // Add this!
-
-const targetHitboxes = [];
-let walkTime = 0; // For walking motion
 const dyingZombies = []; 
+const targetHitboxes = [];
+
+// Asset Templates
+let zombie1Template = null, zombie2Template = null, woodenbatTemplate = null;
+let zombie1Animations = [], zombie2Animations = [], woodenbatAnimations = [];
+
+// Melee & Movement State
+let walkTime = 0;
 let isSwinging = false;
 let swingTimer = 0;
 const batBasePos = new THREE.Vector3(0.5, -0.6, -1.0); // Position relative to camera
@@ -44,15 +42,15 @@ const batBaseRot = new THREE.Euler(10.8, 0, 0);       // Default resting rotatio
 
 
 // UI Elements
-const instructions = document.getElementById('instructions');
 const menus = document.getElementById('menus');
+const instructions = document.getElementById('instructions');
 const gameOverScreen = document.getElementById('game-over');
 const healthDisplay = document.getElementById('health-display');
 const scoreDisplay = document.getElementById('score-display');
 const finalScoreDisplay = document.getElementById('final-score');
 
 // --------------------------------------------------------
-// ENVIRONMENT: CAMPFIRE & TREES
+// 2. ENVIRONMENT: CAMPFIRE, STARS & TREES
 // --------------------------------------------------------
 // Simple Ground
 const ground = new THREE.Mesh(new THREE.PlaneGeometry(100, 100), new THREE.MeshStandardMaterial({ color: 0x111111, roughness: 1.0 }));
@@ -60,14 +58,16 @@ ground.rotation.x = -Math.PI / 2;
 ground.receiveShadow = true;
 scene.add(ground);
 
+// Lighting
 const fireLight = new THREE.PointLight(0xff6600, 10, 20);
 fireLight.position.set(0, 1, 0); // Directly above the logs
 fireLight.castShadow = true;
 scene.add(fireLight);
 
-const ambientLight = new THREE.AmbientLight(0x404040, 0.5); // Soft moonlight
+const ambientLight = new THREE.AmbientLight(0x404040, 0.5); // Soft moon/ambient light
 scene.add(ambientLight);
 
+// Stars - Created with Points for performance
 function createStarfield(numStars) {
     const geometry = new THREE.BufferGeometry();
     const positions = new Float32Array(numStars * 3);
@@ -417,9 +417,6 @@ document.addEventListener('keyup', (e) => keys[e.key.toLowerCase()] = false);
 // --------------------------------------------------------
 const raycaster = new THREE.Raycaster();
 const center = new THREE.Vector2(0, 0); // Center of screen
-
-const muzzleFlash = new THREE.PointLight(0xFFFFAA, 0, 10)
-scene.add(muzzleFlash)
 
 document.addEventListener('mousedown', (e) => {
     if (isPlaying && e.button === 0 && !isSwinging) {
